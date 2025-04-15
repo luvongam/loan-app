@@ -29,6 +29,7 @@ public class Customer {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @ToString.Exclude
     private List<Loan> loans = new ArrayList<>();
 
     @Column(nullable = false)
