@@ -1,11 +1,14 @@
 package com.jamlech.loanapp.entities;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -31,6 +34,17 @@ public class Loan {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private LoanFrequency frequency;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private LoanStatus status;
+
+//    private double totalPaid;
+//    private boolean isFullyPaid;
+
+@OneToMany(mappedBy = "loan", cascade = CascadeType.ALL, orphanRemoval = true)
+@JsonManagedReference
+    private List<RepaymentSchedule> repaymentSchedules= new ArrayList<>();
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

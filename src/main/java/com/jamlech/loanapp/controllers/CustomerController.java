@@ -36,13 +36,17 @@ public class CustomerController {
     public ResponseEntity<Customer> updateCustomer(
             @PathVariable Long id,
             @RequestBody Customer customer) {
-        Customer updatedCustomer = customerService.updateCustomer(id, customer);
-        return ResponseEntity.ok(updatedCustomer);
+       try {
+            Customer updatedCustomer = customerService.updateCustomer(id, customer);
+            return ResponseEntity.ok(updatedCustomer);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCustomer(
             @PathVariable Long id) {
         customerService.deleteCustomer(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 }

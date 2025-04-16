@@ -1,4 +1,5 @@
 package com.jamlech.loanapp.entities;
 
-public enum PaymentStatu {
+public enum PaymentStatus {
+    PENDING, PAID
 }

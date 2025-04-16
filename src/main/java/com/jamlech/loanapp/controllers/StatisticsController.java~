@@ -16,8 +16,5 @@ public class StatisticsController {
         this.loanService = loanService;
     }
     @GetMapping("/loans")
-    public ResponseEntity<LoanStatistics> getLoanStatistics(){
-        LoanStatistics statistics=loanService.getLoanStatistics();
-        return ResponseEntity.ok(statistics);
-    }
+    public ResponseEntity<LoanStatistics>
 }

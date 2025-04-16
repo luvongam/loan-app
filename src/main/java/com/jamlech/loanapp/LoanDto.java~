@@ -1,0 +1,6 @@
+package com.jamlech.loanapp;
+
+public record LoanDto(
+        double 
+) {
+}
