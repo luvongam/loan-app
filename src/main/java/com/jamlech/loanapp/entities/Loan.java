@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,11 +45,12 @@ public class Loan {
 
 @OneToMany(mappedBy = "loan", cascade = CascadeType.ALL, orphanRemoval = true)
 @JsonManagedReference
-    private List<RepaymentSchedule> repaymentSchedules= new ArrayList<>();
+@ToString.Exclude
+private List<RepaymentSchedule> repaymentSchedules= new ArrayList<>();
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
-    @Column(nullable = false)
+    private LocalDate startDate=LocalDate.now();
+
     private LocalDateTime updatedAt;
 
     @Override
@@ -66,9 +68,9 @@ public class Loan {
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
-    @PrePersist
-    public void prePersist() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
+
+//    public void prePersist() {
+//
+//        updatedAt = LocalDateTime.now();
+//    }
 }

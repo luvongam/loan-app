@@ -162,6 +162,12 @@ public class LoanService {
         return statistics;
 
     }
+
+
+
+
+
+
     private List<RepaymentSchedule> generateRepaymentSchedule(Loan loan) {
         List<RepaymentSchedule> schedules = new ArrayList<>();
         double principalAmount = loan.getPrincipalAmount();
@@ -169,52 +175,148 @@ public class LoanService {
         int repaymentPeriod = loan.getRepaymentPeriod();
         LoanFrequency frequency = loan.getFrequency();
 
-//        calculate thr periods per year  based on frequency
+        // Validate inputs
+        if (principalAmount <= 0) {
+            throw new IllegalArgumentException("Principal amount must be positive.");
+        }
+        if (repaymentPeriod <= 0) {
+            throw new IllegalArgumentException("Repayment period must be positive.");
+        }
+        if (annualRate < 0) {
+            throw new IllegalArgumentException("Interest rate cannot be negative.");
+        }
+
+        // Calculate periods per year based on frequency
         int periodsPerYear = switch (frequency) {
             case WEEKS -> 52;
             case MONTHS -> 12;
             case YEARS -> 1;
             default -> throw new IllegalArgumentException("Invalid frequency: " + frequency);
         };
-//        calculate the periodic rate
-        double periodicRate = annualRate / periodsPerYear;
-//        calculate the fixed monthly payment
-        double monthlyPayment = principalAmount * (
-                periodicRate * Math.pow(1 + periodicRate, repaymentPeriod)) /
-                (Math.pow(1 + periodicRate, repaymentPeriod) - 1);
-        double remainingBalance = principalAmount;
-        LocalDate currentDate = LocalDate.now();
 
-        for (int i = 1; i < repaymentPeriod; i++) {
-            //            interest per components
-            double interestComponent = remainingBalance * periodicRate;
-            double principalComponent = monthlyPayment - interestComponent;
-            remainingBalance -= principalComponent;
-//            adjust due date
+        // Calculate simple interest
+        double totalInterest = principalAmount * annualRate * (repaymentPeriod / (double) periodsPerYear);
+        double periodicPrincipal = principalAmount / repaymentPeriod;
+        double periodicInterest = totalInterest / repaymentPeriod;
+        double periodicPayment = periodicPrincipal + periodicInterest;
+
+        double remainingBalance = principalAmount;
+        LocalDate startDate = loan.getStartDate() != null ? loan.getStartDate() : LocalDate.now();
+
+        for (int i = 1; i <= repaymentPeriod; i++) {
+            // Adjust final payment to account for rounding errors
+            if (i == repaymentPeriod) {
+                periodicPrincipal = remainingBalance; // Ensure remaining balance is paid off
+                periodicPayment = periodicPrincipal + periodicInterest;
+            }
+
+            // Update remaining balance
+            remainingBalance -= periodicPrincipal;
+
+            // Calculate due date
             LocalDate dueDate = switch (frequency) {
-                case WEEKS -> currentDate.plusWeeks(i);
-                case MONTHS -> currentDate.plusMonths(i);
-                case YEARS -> currentDate.plusYears(i);
+                case WEEKS -> startDate.plusWeeks(i);
+                case MONTHS -> startDate.plusMonths(i);
+                case YEARS -> startDate.plusYears(i);
                 default -> throw new IllegalArgumentException("Invalid repayment frequency.");
             };
-//            create repayment entry
-            RepaymentSchedule repaymentSchedule =new RepaymentSchedule();
+
+            // Create repayment entry
+            RepaymentSchedule repaymentSchedule = new RepaymentSchedule();
             repaymentSchedule.setInstallmentNumber(i);
             repaymentSchedule.setDueDate(dueDate);
-            repaymentSchedule.setPrincipalComponent(
-                    Math.round(principalComponent*100.0)/100.0
-            );
-            repaymentSchedule.setInterestComponent(
-                    Math.round(interestComponent*100.0)/100.0);
-            repaymentSchedule.setTotalPayment(
-                    Math.round(monthlyPayment*100.0)/100.0
-            );
-            repaymentSchedule.setRemainingBalance(
-                    Math.round(remainingBalance*100.0)/100.0);
+            repaymentSchedule.setPrincipalComponent(Math.round(periodicPrincipal * 100.0) / 100.0);
+            repaymentSchedule.setInterestComponent(Math.round(periodicInterest * 100.0) / 100.0);
+            repaymentSchedule.setTotalPayment(Math.round(periodicPayment * 100.0) / 100.0);
+            repaymentSchedule.setRemainingBalance(Math.round(remainingBalance * 100.0) / 100.0);
+
             schedules.add(repaymentSchedule);
         }
+
         return schedules;
     }
+
+
+//    private List<RepaymentSchedule> generateRepaymentSchedule(Loan loan) {
+//        List<RepaymentSchedule> schedules = new ArrayList<>();
+//        double principalAmount = loan.getPrincipalAmount();
+//        double annualRate = loan.getInterestRate();
+//        int repaymentPeriod = loan.getRepaymentPeriod();
+//        LoanFrequency frequency = loan.getFrequency();
+//
+//        // Validate inputs
+//        if (principalAmount <= 0) {
+//            throw new IllegalArgumentException("Principal amount must be positive.");
+//        }
+//        if (repaymentPeriod <= 0) {
+//            throw new IllegalArgumentException("Repayment period must be positive.");
+//        }
+//        if (annualRate < 0) {
+//            throw new IllegalArgumentException("Interest rate cannot be negative.");
+//        }
+//
+////        calculate thr periods per year  based on frequency
+//        int periodsPerYear = switch (frequency) {
+//            case WEEKS -> 52;
+//            case MONTHS -> 12;
+//            case YEARS -> 1;
+//            default -> throw new IllegalArgumentException("Invalid frequency: " + frequency);
+//        };
+////        calculate the periodic rate
+//        double periodicRate = annualRate / periodsPerYear;
+//
+//
+////        calculate fixed periodic payment using amortization formula
+//        double periodicPayment;
+//        if (annualRate ==0){
+//            periodicPayment=principalAmount/repaymentPeriod;
+//        }
+//        else {
+//            periodicPayment=principalAmount * (
+//                    periodicRate*Math.pow(1+ periodicRate,repaymentPeriod)
+//                    ) / (Math.pow(1+periodicRate,repaymentPeriod)-1);
+//        }
+//        double remainingBalance=principalAmount;
+//        LocalDate startDate = loan.getStartDate() != null ? loan.getStartDate():LocalDate.now();
+//
+//
+//
+//        for (int i = 1; i <= repaymentPeriod; i++) {
+//            //            interest per components
+//            double interestComponent = remainingBalance * periodicRate;
+//            double principalComponent =periodicPayment - interestComponent;
+//
+//            if (i==repaymentPeriod){
+//                principalComponent=remainingBalance;
+//                periodicPayment =principalAmount+interestComponent;
+//            }
+//
+//            remainingBalance-=principalComponent;
+////            adjust due date
+//            LocalDate dueDate = switch (frequency) {
+//                case WEEKS -> startDate.plusWeeks(i);
+//                case MONTHS -> startDate.plusMonths(i);
+//                case YEARS -> startDate.plusYears(i);
+//                default -> throw new IllegalArgumentException("Invalid repayment frequency.");
+//            };
+////            create repayment entry
+//            RepaymentSchedule repaymentSchedule =new RepaymentSchedule();
+//            repaymentSchedule.setInstallmentNumber(i);
+//            repaymentSchedule.setDueDate(dueDate);
+//            repaymentSchedule.setPrincipalComponent(
+//                    Math.round(principalComponent*100.0)/100.0
+//            );
+//            repaymentSchedule.setInterestComponent(
+//                    Math.round(interestComponent*100.0)/100.0);
+//            repaymentSchedule.setTotalPayment(
+//                    Math.round(periodicPayment*100.0)/100.0
+//            );
+//            repaymentSchedule.setRemainingBalance(
+//                    Math.round(remainingBalance*100.0)/100.0);
+//            schedules.add(repaymentSchedule);
+//        }
+//        return schedules;
+//    }
 
 
 

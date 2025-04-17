@@ -40,7 +40,7 @@ public class LoanController {
                 customerId,loanId);
         return ResponseEntity.ok(repaymentScheduleList);
     }
-    @PostMapping("/{customerId}/{loanId}/repayment-schedule/{scheduleId}/pay")
+    @PutMapping("/{customerId}/{loanId}/repayment-schedule/{scheduleId}/pay")
     public ResponseEntity<Void> markInstallmentPaid(
             @PathVariable Long customerId,
             @PathVariable long loanId,
